@@ -77,6 +77,4 @@ public class SearchService {
 
         return objectMapper.writeValueAsString(responseBody);
     }
-
-
 }
