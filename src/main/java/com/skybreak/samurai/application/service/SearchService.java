@@ -26,14 +26,9 @@ public class SearchService {
 
     private final WebClient webClient;
 
-    public Mono<SearchResponse> lookupSearchWithRetrieve() {
+    public Mono<SearchResponse> lookupSearchWithRetrieve() throws URISyntaxException {
         WebClient.ResponseSpec responseSpec = webClient.get()
-            .uri(builder -> builder
-                .scheme("http")
-                .host("localhost")
-                .port(8080)
-                .path("/api/v1/search")
-                .build())
+            .uri(new URI("http://localhost:8080/api/v1/create"))
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .accept(MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML)
             .acceptCharset(StandardCharsets.UTF_8)
@@ -41,14 +36,9 @@ public class SearchService {
         return responseSpec.bodyToMono(SearchResponse.class);
     }
 
-    public Mono<SearchResponse> lookupSearchWithExchange() {
+    public Mono<SearchResponse> lookupSearchWithExchange() throws URISyntaxException {
         WebClient.RequestHeadersSpec<?> requestHeadersSpec = webClient.get()
-            .uri(builder -> builder
-                .scheme("http")
-                .host("localhost")
-                .port(8080)
-                .path("/api/v1/search")
-                .build())
+            .uri(new URI("http://localhost:8080/api/v1/create"))
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .accept(MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML)
             .acceptCharset(StandardCharsets.UTF_8);
