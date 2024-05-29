@@ -19,7 +19,7 @@
     <modules>
         <module>search-service</module>
         <module>metadata-indexer-service</module>
-        <module>metadata-aggregator-service</module>
+        <module>metadata-aggregation-service</module>
     </modules>
 
     <properties>

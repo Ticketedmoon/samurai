@@ -1,0 +1,12 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: samurai-metadata-aggregation-service
+
+metadata-aggregation-service:
+  api:
+    client:
+      id: XXX
+      secret: XXX
