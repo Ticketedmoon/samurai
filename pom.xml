@@ -17,8 +17,9 @@
     <description>Samurai - A search catalog for games with personalisable features</description>
 
     <modules>
-        <module>metadata-indexer-service</module>
         <module>search-service</module>
+        <module>metadata-indexer-service</module>
+        <module>metadata-aggregator-service</module>
     </modules>
 
     <properties>
