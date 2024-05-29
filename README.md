@@ -25,7 +25,16 @@ docker run -i -p 127.0.0.1:9200:9200 -p 127.0.0.1:9600:9600 -e "discovery.type=s
 docker run -i -p 127.0.0.1:9200:9200 -p 127.0.0.1:9600:9600 -e "discovery.type=single-node" skybreak/samurai/opensearch:2.14.0
 ````
 
-Test
+Compose
+
+```
+docker compose up -d
+docker compose ps
+docker compose logs <serviceName>
+docker compose down
+```
+
+Testing
 
 ```
 curl https://localhost:9200 -ku 'admin:XXX'
