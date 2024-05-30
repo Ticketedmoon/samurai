@@ -1,44 +1,53 @@
 package com.skybreak.samurai.application.service;
 
+import com.api.igdb.exceptions.RequestException;
+import com.api.igdb.request.IGDBWrapper;
+import com.api.igdb.request.TwitchAuthenticator;
+import com.api.igdb.utils.Endpoints;
+import com.api.igdb.utils.TwitchToken;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.skybreak.samurai.application.domain.properties.ApiClientProperties;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import proto.Game;
+import proto.GameResult;
 
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class GameCatalogueCollectionService {
 
+    private static final String NEXT_GAME_LIST_API_QUERY_TEMPLATE = """
+        fields: id, name, rating, aggregated_rating;
+        sort aggregated_rating desc;
+        offset %s;
+        limit 100;
+        """;
+
     private final ApiClientProperties apiClientProperties;
-    private final WebClient webClient;
 
     @PostConstruct
-    void connectToApi() throws URISyntaxException {
-        WebClient.ResponseSpec responseSpec = webClient.post()
-            .uri(uriBuilder -> uriBuilder
-                .scheme("https")
-                .host("id.twitch.tv")
-                .path("oauth2/token")
-                .queryParam("client_id", apiClientProperties.getId())
-                .queryParam("client_secret", apiClientProperties.getSecret())
-                .queryParam("grant_type", "client_credentials")
-                .build()
-            )
-            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .accept(MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML)
-            .acceptCharset(StandardCharsets.UTF_8)
-            .retrieve();
+    void scanGameCatalogueForEvents() throws InvalidProtocolBufferException, RequestException {
+        TwitchToken twitchToken = acquireAccessToken();
 
-        String response = responseSpec.bodyToMono(String.class)
-            .onErrorResume(e -> Mono.empty())
-            .block();
-        assert response != null;
+        IGDBWrapper wrapper = IGDBWrapper.INSTANCE;
+        wrapper.setCredentials(apiClientProperties.getId(), twitchToken.getAccess_token());
+
+        List<Game> gameSubList = searchGames(wrapper, 0);
+
+        // push to kafka topic
+    }
+
+    private List<Game> searchGames(IGDBWrapper wrapper, long positionOffset) throws RequestException, InvalidProtocolBufferException {
+        String query = NEXT_GAME_LIST_API_QUERY_TEMPLATE.formatted(positionOffset);
+        byte[] bytes = wrapper.apiProtoRequest(Endpoints.GAMES, query);
+        return GameResult.parseFrom(bytes).getGamesList();
+    }
+
+    private TwitchToken acquireAccessToken() {
+        TwitchAuthenticator tAuth = TwitchAuthenticator.INSTANCE;
+        return tAuth.requestTwitchToken(apiClientProperties.getId(), apiClientProperties.getSecret());
     }
 }
