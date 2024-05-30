@@ -51,6 +51,22 @@ docker compose logs <serviceName>
 docker compose down
 ```
 
+### Kafka
+
+In our Springboot application, Kafka topics can be created and configured via application config.
+
+The spring boot application will automatically create Kafka topics on the specified Kafka broker when it is launched.
+
+To get the topic configuration details on the server, run this command:
+
+```
+kafka-topics.sh --bootstrap-server localhost:9092 --topic <topic_name> --describe
+```
+
+You should see output similar to the following:
+
+![kafka topic details](https://media.geeksforgeeks.org/wp-content/uploads/20221122145422/Screenshotfrom202211221356322.png)
+
 ### Testing
 
 ```

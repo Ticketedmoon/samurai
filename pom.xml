@@ -28,6 +28,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <spring-boot.version>3.2.5</spring-boot.version>
+        <spring-kafka.version>3.2.0</spring-kafka.version>
+
         <igdb-api-jvm.version>1.1.0</igdb-api-jvm.version>
         <lombok.version>1.18.32</lombok.version>
         <jackson.version>2.17.0</jackson.version>
@@ -41,6 +43,12 @@
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.kafka</groupId>
+                <artifactId>spring-kafka</artifactId>
+                <version>${spring-kafka.version}</version>
             </dependency>
 
             <dependency>
