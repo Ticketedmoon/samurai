@@ -20,21 +20,11 @@ public class TopicConfiguration {
         return new KafkaAdmin(configs);
     }
 
-    // Create new topics
     @Bean
     public NewTopic topic1() {
-        return TopicBuilder.name("TOPIC-1")
+        return TopicBuilder.name("test_topic")
             .partitions(1)
             .replicas(1)
             .build();
     }
-
-    @Bean
-    public NewTopic topic2() {
-        return TopicBuilder.name("TOPIC-2")
-            .partitions(1)
-            .replicas(1)
-            .build();
-    }
-
 }
