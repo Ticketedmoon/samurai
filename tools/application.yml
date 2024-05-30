@@ -1,0 +1,13 @@
+micronaut:
+  server:
+    cors:
+      enabled: true
+      configuration:
+        all:
+          allowedOrigins:
+            - http://localhost:3000
+akhq:
+  connections:
+    local:
+      properties:
+        bootstrap.servers: "localhost:29092"
