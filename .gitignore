@@ -1,4 +1,6 @@
 .env
+zookeeper
+kafka
 
 HELP.md
 target/

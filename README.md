@@ -42,13 +42,20 @@ By reviewing each part of the command, you can see that it:
 - Requests the opensearchproject/opensearch:latest image from Docker Hub.
 - Runs the container.
 
-### Compose
+##### Compose
 
 ```
 docker compose up -d
 docker compose ps
 docker compose logs <serviceName>
 docker compose down
+```
+
+##### Volume Management
+
+```
+docker inspect zookeeper | jq '.[].Mounts[] | .Type ,.Destination'
+docker inspect kafka | jq '.[].Mounts[] | .Type ,.Destination'
 ```
 
 ### Kafka
