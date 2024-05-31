@@ -7,6 +7,10 @@ spring:
   kafka:
     bootstrap-servers: localhost:29092
 
+kafka:
+  topic:
+    name: test_topic
+
 metadata-aggregation-service:
   api:
     client:

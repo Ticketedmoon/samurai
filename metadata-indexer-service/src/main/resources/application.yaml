@@ -4,3 +4,11 @@ server:
 spring:
   application:
     name: samurai-metadata-indexer-service
+  kafka:
+    bootstrap-servers: localhost:29092
+
+kafka:
+  topic:
+    name: test_topic
+  consumer:
+    groupId: "test-consumer-group-1"

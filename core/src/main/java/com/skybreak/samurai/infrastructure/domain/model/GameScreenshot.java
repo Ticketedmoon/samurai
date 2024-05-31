@@ -1,4 +1,4 @@
-package com.skybreak.samurai.application.domain.model;
+package com.skybreak.samurai.infrastructure.domain.model;
 
 import lombok.Builder;
 import lombok.extern.jackson.Jacksonized;

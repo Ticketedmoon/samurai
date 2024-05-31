@@ -6,22 +6,21 @@ import com.api.igdb.request.TwitchAuthenticator;
 import com.api.igdb.utils.Endpoints;
 import com.api.igdb.utils.TwitchToken;
 import com.google.protobuf.InvalidProtocolBufferException;
-import com.skybreak.samurai.application.domain.model.GameChangeEvent;
-import com.skybreak.samurai.application.domain.model.GameScreenshot;
-import com.skybreak.samurai.application.domain.model.Operation;
 import com.skybreak.samurai.application.domain.properties.ApiClientProperties;
-import com.skybreak.samurai.infrastructure.service.GameKafkaProducer;
+import com.skybreak.samurai.infrastructure.domain.model.GameChangeEvent;
+import com.skybreak.samurai.infrastructure.domain.model.GameScreenshot;
+import com.skybreak.samurai.infrastructure.domain.model.Operation;
+import com.skybreak.samurai.infrastructure.service.producer.GameKafkaProducer;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import proto.Game;
-import proto.GameResult;
-
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import proto.Game;
+import proto.GameResult;
 
 @Service
 @RequiredArgsConstructor

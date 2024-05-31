@@ -12,7 +12,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
     locations = "classpath:application-integration-test.yaml")
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.MOCK,
-    classes = SamuraiApplication.class)
+        classes = SearchServiceApplication.class)
 public class IntegrationTestBase {
 
 }
