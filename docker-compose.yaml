@@ -1,6 +1,6 @@
 version: '3.7'
 
-# TODO: Keep kafka volumes stored
+# TODO: use multiple kafka/zk nodes
 
 services:
   zookeeper:

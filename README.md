@@ -55,7 +55,8 @@ docker compose down
 
 ```
 docker inspect zookeeper | jq '.[].Mounts[] | .Type ,.Destination'
-docker inspect kafka | jq '.[].Mounts[] | .Type ,.Destination'
+docker inspect kafka | jq '.[].Mounts[] | .Type ,.Destination' # Inspect volume links in container 
+docker compose down -v # Remove volumes
 ```
 
 ### Kafka

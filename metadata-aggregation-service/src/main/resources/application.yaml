@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: samurai-metadata-aggregation-service
+  kafka:
+    bootstrap-servers: localhost:29092
 
 metadata-aggregation-service:
   api:

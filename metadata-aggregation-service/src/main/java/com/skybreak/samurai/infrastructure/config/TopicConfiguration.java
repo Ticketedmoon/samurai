@@ -2,6 +2,7 @@ package com.skybreak.samurai.infrastructure.config;
 
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
@@ -13,9 +14,9 @@ import java.util.Map;
 public class TopicConfiguration {
 
     @Bean
-    public KafkaAdmin admin() {
+    public KafkaAdmin admin(@Value(value = "${spring.kafka.bootstrap-servers}") String bootstrapAddress) {
         Map<String, Object> configs = Map.of(
-            AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:29092"
+            AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress
         );
         return new KafkaAdmin(configs);
     }
