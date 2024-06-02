@@ -25,7 +25,7 @@ public class KafkaConsumerConfiguration {
     @Bean
     public ConsumerFactory<String, ChangeEvent> consumerFactory(
             @Value(value = "${spring.kafka.bootstrap-servers}") String bootstrapAddress,
-            @Value(value = "${kafka.consumer.groupId}") String groupId) {
+            @Value(value = "${metadata-indexer-service.kafka.consumer.groupId}") String groupId) {
         Map<String, Object> props = new HashMap<>();
         // TODO Move me to properties
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);

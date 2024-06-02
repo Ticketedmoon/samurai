@@ -7,8 +7,12 @@ spring:
   kafka:
     bootstrap-servers: localhost:29092
 
-kafka:
-  topic:
-    name: test_topic
-  consumer:
-    groupId: "test-consumer-group-1"
+metadata-indexer-service:
+  opensearch:
+    write-index:
+      name: "samurai-index"
+  kafka:
+    topic:
+      name: test_topic
+    consumer:
+      groupId: "test-consumer-group-1"
