@@ -1,80 +1,67 @@
 package com.skybreak.samurai.application.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.skybreak.samurai.application.domain.dto.SamuraiDocument;
 import com.skybreak.samurai.application.domain.model.SearchParams;
-import com.skybreak.samurai.application.domain.model.SearchResponse;
+import java.io.IOException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.query_dsl.FieldValueFactorScoreFunction;
+import org.opensearch.client.opensearch._types.query_dsl.FunctionBoostMode;
+import org.opensearch.client.opensearch._types.query_dsl.FunctionScore;
+import org.opensearch.client.opensearch._types.query_dsl.FunctionScoreMode;
+import org.opensearch.client.opensearch._types.query_dsl.FunctionScoreQuery;
+import org.opensearch.client.opensearch._types.query_dsl.MatchAllQuery;
+import org.opensearch.client.opensearch._types.query_dsl.Query;
+import org.opensearch.client.opensearch.core.SearchRequest;
+import org.opensearch.client.opensearch.core.SearchResponse;
+import org.opensearch.client.opensearch.core.search.SourceConfig;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SearchService {
 
+    @Value(value = "${metadata-indexer-service.opensearch.write-index.name}")
+    private String samuraiIndex;
+
     public final ObjectMapper objectMapper;
 
-    private final WebClient webClient;
+    private final OpenSearchClient openSearchClient;
 
-    public Mono<SearchResponse> lookupSearchWithRetrieve() throws URISyntaxException {
-        WebClient.ResponseSpec responseSpec = webClient.get()
-            .uri(new URI("http://localhost:8080/api/v1/create"))
-            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .accept(MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML)
-            .acceptCharset(StandardCharsets.UTF_8)
-            .retrieve();
-        return responseSpec.bodyToMono(SearchResponse.class);
-    }
+    public List<SamuraiDocument> performSearch(SearchParams searchParams) throws IOException {
+        Query matchAllQuery = new Query.Builder()
+                .matchAll(new MatchAllQuery.Builder().build())
+                .build();
 
-    public Mono<SearchResponse> lookupSearchWithExchange() throws URISyntaxException {
-        WebClient.RequestHeadersSpec<?> requestHeadersSpec = webClient.get()
-            .uri(new URI("http://localhost:8080/api/v1/create"))
-            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .accept(MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML)
-            .acceptCharset(StandardCharsets.UTF_8);
+        FieldValueFactorScoreFunction fieldValueFactorScoreFunction = new FieldValueFactorScoreFunction.Builder()
+                .missing(0.0)
+                .factor(10.0)
+                .field("rating")
+                .build();
 
-        return requestHeadersSpec.exchangeToMono(response -> {
-            if (response.statusCode().equals(HttpStatus.OK)) {
-                return response.bodyToMono(SearchResponse.class);
-            } else if (response.statusCode().is4xxClientError()) {
-                return Mono.empty();
-            } else {
-                return response.createException().flatMap(Mono::error);
-            }
-        });
-    }
+        FunctionScore functionScore = new FunctionScore.Builder().fieldValueFactor(fieldValueFactorScoreFunction)
+                .build();
 
-    public String postWithExchange(SearchParams searchParams) throws URISyntaxException, JsonProcessingException {
-        WebClient.RequestHeadersSpec<?> requestHeadersSpec = webClient.post()
-            .uri(new URI("http://localhost:8080/api/v1/create"))
-            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .accept(MediaType.APPLICATION_JSON)
-            .header(HttpHeaders.AUTHORIZATION, "N/A")
-            .acceptCharset(StandardCharsets.UTF_8)
-            .bodyValue(searchParams);
+        FunctionScoreQuery functionScoreQuery = new FunctionScoreQuery.Builder()
+                .query(matchAllQuery)
+                .functions(List.of(functionScore))
+                .boostMode(FunctionBoostMode.Multiply)
+                .scoreMode(FunctionScoreMode.Sum)
+                .build();
 
-        Object responseBody = requestHeadersSpec
-            .exchangeToMono(response -> {
-                if (response.statusCode().is2xxSuccessful()) {
-                    return response.bodyToMono(SearchParams.class);
-                } else if (response.statusCode().is4xxClientError()) {
-                    return Mono.just("Error response");
-                } else {
-                    return response.createException().flatMap(Mono::error);
-                }
-            })
-            .block();
+        Query query = new Query.Builder().functionScore(functionScoreQuery).build();
 
-        return objectMapper.writeValueAsString(responseBody);
+        SearchRequest request = new SearchRequest.Builder()
+                .index(samuraiIndex)
+                .source(SourceConfig.of(s -> s.filter(f -> f.includes(List.of("title", "rating")))))
+                .query(query)
+                .build();
+        SearchResponse<SamuraiDocument> searchResponse = openSearchClient.search(request, SamuraiDocument.class);
+        return searchResponse.documents();
     }
 }
