@@ -1,22 +1,27 @@
 package com.skybreak.samurai.application.domain.model;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Value;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.jackson.Jacksonized;
 import org.hibernate.validator.constraints.Range;
 
-@Value
+@Getter
 @Builder
 @Jacksonized
+@EqualsAndHashCode
 public class SearchParams {
 
-    @NotBlank
-    String q;
+    @Setter
+    @NotNull
+    private String q;
 
     @NotBlank
-    String language;
+    private final String language;
 
     @Range(min = 10, max = 100)
-    Integer rows = 100;
+    private final Integer rows = 100;
 }
