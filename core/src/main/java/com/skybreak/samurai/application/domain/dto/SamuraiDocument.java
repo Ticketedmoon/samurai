@@ -1,5 +1,6 @@
 package com.skybreak.samurai.application.domain.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.skybreak.samurai.infrastructure.domain.model.GameScreenshot;
@@ -20,6 +21,7 @@ public class SamuraiDocument {
     private long id;
     private String name;
     private String summary;
-    private BigDecimal samuraiRating;
+    @JsonProperty("samurai_rating")
+    private BigDecimal rating;
     private List<GameScreenshot> screenshots;
 }

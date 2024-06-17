@@ -25,7 +25,7 @@ public class GameIndexingOrchestrator {
                 .id(event.getKey())
                 .name(event.getName())
                 .summary(event.getSummary())
-                .samuraiRating(rating)
+                .rating(rating)
                 .screenshots(screenshots)
                 .build();
 

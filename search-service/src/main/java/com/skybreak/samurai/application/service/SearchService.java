@@ -17,6 +17,7 @@ import org.opensearch.client.opensearch._types.query_dsl.MatchAllQuery;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch.core.SearchRequest;
 import org.opensearch.client.opensearch.core.SearchResponse;
+import org.opensearch.client.opensearch.core.search.Hit;
 import org.opensearch.client.opensearch.core.search.SourceConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,10 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class SearchService {
 
-    @Value(value = "${metadata-indexer-service.opensearch.write-index.name}")
+    private static final List<String> SEARCHABLE_DOCUMENT_FIELDS
+            = List.of("id", "name", "summary", "samurai_rating", "screenshots");
+
+    @Value(value = "${search-service.opensearch.read-index.name}")
     private String samuraiIndex;
 
     public final ObjectMapper objectMapper;
@@ -41,10 +45,11 @@ public class SearchService {
         FieldValueFactorScoreFunction fieldValueFactorScoreFunction = new FieldValueFactorScoreFunction.Builder()
                 .missing(0.0)
                 .factor(10.0)
-                .field("rating")
+                .field("samurai_rating")
                 .build();
 
-        FunctionScore functionScore = new FunctionScore.Builder().fieldValueFactor(fieldValueFactorScoreFunction)
+        FunctionScore functionScore = new FunctionScore.Builder()
+                .fieldValueFactor(fieldValueFactorScoreFunction)
                 .build();
 
         FunctionScoreQuery functionScoreQuery = new FunctionScoreQuery.Builder()
@@ -58,10 +63,14 @@ public class SearchService {
 
         SearchRequest request = new SearchRequest.Builder()
                 .index(samuraiIndex)
-                .source(SourceConfig.of(s -> s.filter(f -> f.includes(List.of("title", "rating")))))
+                .source(SourceConfig.of(
+                        function -> function.filter(filter -> filter.includes(SEARCHABLE_DOCUMENT_FIELDS))))
                 .query(query)
+                .size(searchParams.getRows())
                 .build();
         SearchResponse<SamuraiDocument> searchResponse = openSearchClient.search(request, SamuraiDocument.class);
-        return searchResponse.documents();
+        return searchResponse.hits().hits().stream()
+                .map(Hit::source)
+                .toList();
     }
 }

@@ -4,3 +4,8 @@ server:
 spring:
   application:
     name: samurai-search-service
+
+search-service:
+  opensearch:
+    read-index:
+      name: "samurai-index"
