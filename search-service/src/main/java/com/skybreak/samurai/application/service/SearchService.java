@@ -1,6 +1,5 @@
 package com.skybreak.samurai.application.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.skybreak.samurai.application.domain.dto.SamuraiDocument;
 import com.skybreak.samurai.application.domain.model.SearchParams;
 import io.micrometer.common.util.StringUtils;
@@ -34,10 +33,15 @@ public class SearchService {
     @Value(value = "${search-service.opensearch.read-index.name}")
     private String samuraiIndex;
 
-    public final ObjectMapper objectMapper;
-
     private final OpenSearchClient openSearchClient;
 
+    /**
+     * Performs a search against the document store by the search params specified.
+     *
+     * @param searchParams The search params
+     * @return A List of documents that matches the search request
+     * @throws IOException Thrown for malformed search requests
+     */
     public List<SamuraiDocument> performSearch(SearchParams searchParams) throws IOException {
         handleSearchParameterOverrides(searchParams);
         SearchRequest request = buildSearchRequest(searchParams);
@@ -78,13 +82,12 @@ public class SearchService {
         Query query = new Query.Builder()
                 .functionScore(functionScoreQuery).build();
 
-        SearchRequest request = new SearchRequest.Builder()
+        return new SearchRequest.Builder()
                 .index(samuraiIndex)
                 .source(SourceConfig.of(
                         function -> function.filter(filter -> filter.includes(SEARCHABLE_DOCUMENT_FIELDS))))
                 .query(query)
                 .size(searchParams.getRows())
                 .build();
-        return request;
     }
 }

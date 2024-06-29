@@ -22,6 +22,8 @@ public class SearchParams {
     @NotBlank
     private final String language;
 
+    @NotBlank
+    @Builder.Default
     @Range(min = 10, max = 100)
     private final Integer rows = 100;
 }
