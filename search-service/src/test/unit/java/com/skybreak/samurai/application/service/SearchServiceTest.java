@@ -1,6 +1,7 @@
 package com.skybreak.samurai.application.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -23,15 +24,15 @@ import org.opensearch.client.opensearch.core.SearchRequest;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import org.opensearch.client.opensearch.core.search.Hit;
 import org.opensearch.client.opensearch.core.search.HitsMetadata;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.web.server.ResponseStatusException;
 
-@SpringBootTest
 @ExtendWith(MockitoExtension.class)
 class SearchServiceTest {
 
 	@Mock
 	private OpenSearchClient openSearchClient;
-
 
 	// cut = 'class-under-test'
 	@InjectMocks
@@ -61,7 +62,8 @@ class SearchServiceTest {
 		given(hit.source()).willReturn(expectedDocument);
 		given(hitsMetadata.hits()).willReturn(List.of(hit));
 		given(searchResponse.hits()).willReturn(hitsMetadata);
-		given(openSearchClient.search(any(SearchRequest.class), any(Class.class))).willReturn(searchResponse);
+		given(openSearchClient.search(any(SearchRequest.class), eq(SamuraiDocument.class))).willReturn(searchResponse);
+
 		List<SamuraiDocument> documents = cut.performSearch(searchParams);
 
 		assertThat(documents).isNotEmpty();
@@ -74,9 +76,28 @@ class SearchServiceTest {
 		verify(searchResponse).hits();
 		verify(hitsMetadata).hits();
 		verify(hit).source();
+
+		verifyNoMoreInteractions(searchResponse, hitsMetadata, hit);
 	}
 
 	@Test
-	void given_inbound_search_request_when_perform_search_then_should_throw_exception_for_malformed_request() {
+	void given_inbound_search_request_when_perform_search_then_should_throw_exception_for_malformed_request()
+			throws IOException {
+		SearchParams searchParams = SearchParams.builder()
+				.q("cats")
+				.language("en")
+				.build();
+
+		String exceptionMessage = "Search failure";
+		ResponseStatusException exception = new ResponseStatusException(
+				HttpStatusCode.valueOf(HttpStatus.BAD_REQUEST.value()), exceptionMessage);
+		given(openSearchClient.search(any(SearchRequest.class), eq(SamuraiDocument.class))).willThrow(exception);
+
+		String expectedExceptionMessage = "400 BAD_REQUEST \"%s\"".formatted(exceptionMessage);
+		assertThatThrownBy(() -> cut.performSearch(searchParams))
+				.isInstanceOf(ResponseStatusException.class)
+				.hasMessage(expectedExceptionMessage);
+
+		verify(openSearchClient).search(any(SearchRequest.class), eq(SamuraiDocument.class));
 	}
 }
