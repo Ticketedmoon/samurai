@@ -7,6 +7,7 @@ import com.api.igdb.utils.Endpoints;
 import com.api.igdb.utils.TwitchToken;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.skybreak.samurai.application.domain.properties.ApiClientProperties;
+import com.skybreak.samurai.application.persistence.repository.GameChangeEventRepository;
 import com.skybreak.samurai.infrastructure.domain.model.GameChangeEvent;
 import com.skybreak.samurai.infrastructure.domain.model.GameScreenshot;
 import com.skybreak.samurai.infrastructure.domain.model.Operation;
@@ -26,27 +27,27 @@ import proto.GameResult;
 @RequiredArgsConstructor
 public class GameCollectionService {
 
-    private static final int TOTAL_GAMES_TO_CONSUME_PER_PAGE = 100;
+    private static final int TOTAL_GAMES_TO_CONSUME_PER_PAGE = 200;
     private static final String NEXT_GAME_LIST_API_QUERY_TEMPLATE = """
-        fields: id, name, summary, rating, aggregated_rating, screenshots.url;
-        sort aggregated_rating desc;
-        offset %s;
-                limit %s;
-        """;
+            fields: id, name, summary, rating, aggregated_rating, screenshots.url;
+            sort aggregated_rating desc;
+            offset %s;
+            limit %s;
+            """;
 
     private final ApiClientProperties apiClientProperties;
 
     private final GameKafkaProducer gameKafkaProducer;
+    private final GameChangeEventRepository changeEventRepository;
 
     // When changing this to @Scheduled to poll documents with a certain periodicity, we do not want to lose the
     // position or cursor of the catalogue scan. Therefore, in fear of instance or pod restarts, we want to persist the
     // scan position periodically, so we never need to restart the scan fully. We may lose a small bit of progress but
     // that is trivial, and a trade-off that I am fine to allow.
-    // To achieve this, we could write to disk periodically and then once the application comes back online,
-    // restart from the persisted position. This works with 1 instance, but how does this interplay with several?
-    // Rather than use disk, I think a config sever would be good for reading and writing the position of where the scan
-    // is. This needs more thought, but we can consider synchronization mechanisms between instances to not scan the
-    // same section of the game catalogue twice.
+    // To achieve this, we can make use of our source-of-truth DB to know which rows have been scanned, as each record
+    // will store which cursor/positional block it was derived from.
+    // Given an instance restart, we simply will just need to check the latest block scanned from the db and continue
+    // from that point.
     @PostConstruct
     void scanGameCatalogueForEvents() throws InvalidProtocolBufferException, RequestException {
         TwitchToken twitchToken = acquireAccessToken();
@@ -58,39 +59,43 @@ public class GameCollectionService {
 
         List<GameChangeEvent> gameChangeEvents = buildChangeEventsForGameSubList(gameSubList);
 
+        // Write to DB (Source of Truth)
+        changeEventRepository.saveAll(gameChangeEvents);
+
         gameKafkaProducer.publishEvents(gameChangeEvents);
     }
 
     private static List<GameChangeEvent> buildChangeEventsForGameSubList(List<Game> gameSubList) {
         return gameSubList.stream()
-            .map(changeEvent -> {
-                List<GameScreenshot> gameChangeEventScreenshots = buildGameChangeEventScreenshots(changeEvent);
+                .map(changeEvent -> {
+                    List<GameScreenshot> gameChangeEventScreenshots = buildGameChangeEventScreenshots(changeEvent);
 
-                return GameChangeEvent.builder()
-                    .key(changeEvent.getId())
-                    .op(Operation.CREATE)
-                    .messageUuid(UUID.randomUUID().toString())
-                    .timestampString(LocalDateTime.now().atOffset(ZoneOffset.UTC).toString())
-                    .name(changeEvent.getName())
-                    .summary(changeEvent.getSummary())
-                    .rating(changeEvent.getRating())
-                    .aggregatedRating(changeEvent.getAggregatedRating())
-                    .screenshots(gameChangeEventScreenshots)
-                    .build();
-            })
-            .collect(Collectors.toUnmodifiableList());
+                    return GameChangeEvent.builder()
+                            .key(changeEvent.getId())
+                            .op(Operation.CREATE)
+                            .messageUuid(UUID.randomUUID().toString())
+                            .timestampString(LocalDateTime.now().atOffset(ZoneOffset.UTC).toString())
+                            .name(changeEvent.getName())
+                            .summary(changeEvent.getSummary())
+                            .rating(changeEvent.getRating())
+                            .aggregatedRating(changeEvent.getAggregatedRating())
+                            .screenshots(gameChangeEventScreenshots)
+                            .build();
+                })
+                .collect(Collectors.toUnmodifiableList());
     }
 
     private static List<GameScreenshot> buildGameChangeEventScreenshots(Game changeEvent) {
         return changeEvent.getScreenshotsList().stream()
-            .map(screenshot -> GameScreenshot.builder()
-                .id(screenshot.getId())
-                .url(screenshot.getUrl())
-                .build())
-            .toList();
+                .map(screenshot -> GameScreenshot.builder()
+                        .id(screenshot.getId())
+                        .url(screenshot.getUrl())
+                        .build())
+                .toList();
     }
 
-    private List<Game> searchGames(IGDBWrapper wrapper, long positionOffset) throws RequestException, InvalidProtocolBufferException {
+    private List<Game> searchGames(IGDBWrapper wrapper, long positionOffset)
+            throws RequestException, InvalidProtocolBufferException {
         String query = NEXT_GAME_LIST_API_QUERY_TEMPLATE.formatted(positionOffset, TOTAL_GAMES_TO_CONSUME_PER_PAGE);
         byte[] bytes = wrapper.apiProtoRequest(Endpoints.GAMES, query);
         return GameResult.parseFrom(bytes).getGamesList();

@@ -7,6 +7,18 @@ spring:
   kafka:
     bootstrap-servers: localhost:29092
 
+  datasource:
+    url: jdbc:postgresql://localhost:5432/samurai_db
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
 kafka:
   topic:
     name: test_topic
@@ -14,5 +26,5 @@ kafka:
 metadata-aggregation-service:
   api:
     client:
-      id: XXX
-      secret: XXX
+      id: ${IGDB_CLIENT_ID}
+      secret: ${IGDB_CLIENT_SECRET}

@@ -30,6 +30,7 @@
 
         <spring-boot.version>3.2.5</spring-boot.version>
         <spring-kafka.version>3.2.0</spring-kafka.version>
+        <spring-dotenv.version>4.0.0</spring-dotenv.version>
 
         <igdb-api-jvm.version>1.1.0</igdb-api-jvm.version>
         <lombok.version>1.18.32</lombok.version>
@@ -57,6 +58,12 @@
                 <groupId>org.springframework.kafka</groupId>
                 <artifactId>spring-kafka</artifactId>
                 <version>${spring-kafka.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>me.paulschwarz</groupId>
+                <artifactId>spring-dotenv</artifactId>
+                <version>${spring-dotenv.version}</version>
             </dependency>
 
             <dependency>
